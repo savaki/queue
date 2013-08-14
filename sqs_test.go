@@ -20,12 +20,12 @@ func TestEnqueuesMessage(t *testing.T) {
 	del := make(chan string)
 
 	// WHEN
-	reader := &SQSReader{messages: messages, del: del}
+	reader := &SQSReader{Messages: messages, Del: del}
 	go reader.enqueueMessage(string(bytes), handle)
 
 	// THEN
 	sample := Sample{}
-	message := <-reader.messages
+	message := <-reader.Messages
 	message.Unmarshal(&sample)
 
 	if sample.Url != original.Url {
@@ -41,7 +41,7 @@ func TestEnqueuesMessage(t *testing.T) {
 	// TEST 2 - ensure the handle to be sent on the del channel
 	actualHandle := ""
 	select {
-	case actualHandle = <-reader.del:
+	case actualHandle = <-reader.Del:
 	case <-time.After(100 * time.Millisecond):
 	}
 
@@ -56,7 +56,7 @@ func TestEnqueuesMessage(t *testing.T) {
 
 	// read from chan
 	select {
-	case actualHandle = <-reader.del:
+	case actualHandle = <-reader.Del:
 	case <-time.After(100 * time.Millisecond):
 	}
 

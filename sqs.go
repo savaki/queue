@@ -27,18 +27,18 @@ func (m *msg) OnComplete() {
 }
 
 type SQSReader struct {
-	queueName string
+	QueueName string
 	queue     *gosqs.Queue
-	messages  chan Message
-	del       chan string
-	errs      chan error
+	Messages  chan Message
+	Del       chan string
+	Errs      chan error
 }
 
 type SQSWriter struct {
-	queueName string
-	batchSize int
-	messages  chan interface{}
-	errs      chan error
+	QueueName string
+	BatchSize int
+	Messages  chan interface{}
+	Errs      chan error
 }
 
 var (

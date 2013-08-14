@@ -10,23 +10,23 @@ import (
 )
 
 func WriteToQueue(queueName string) {
-	writer := &SQSWriter{queueName: queueName}
+	writer := &SQSWriter{QueueName: queueName}
 	writer.WriteToQueue()
 }
 
 func (w *SQSWriter) WriteToQueue() {
-	if w.messages == nil {
-		w.messages = make(chan interface{})
+	if w.Messages == nil {
+		w.Messages = make(chan interface{})
 	}
-	if w.errs == nil {
-		w.errs = make(chan error)
+	if w.Errs == nil {
+		w.Errs = make(chan error)
 	}
-	if w.queueName == "" {
-		w.errs <- errors.New("WriteToQueue - misssing queueName")
+	if w.QueueName == "" {
+		w.Errs <- errors.New("WriteToQueue - misssing queueName")
 		return
 	}
 
-	q, err := LookupQueue(w.queueName)
+	q, err := LookupQueue(w.QueueName)
 	if err != nil {
 		panic(err)
 	}
@@ -46,10 +46,10 @@ func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestE
 	requests := make([]gosqs.SendMessageBatchRequestEntry, 0)
 	results := make([]interface{}, 0)
 
-	for index := 0; index < w.batchSize; index++ {
+	for index := 0; index < w.BatchSize; index++ {
 		var result interface{} = nil
 		select {
-		case result = <-w.messages:
+		case result = <-w.Messages:
 			text, err := json.Marshal(result)
 			if err != nil {
 				return nil, err
@@ -68,7 +68,7 @@ func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestE
 			results = append(results, result)
 
 		case <-time.After(5 * time.Minute):
-			index = w.batchSize
+			index = w.BatchSize
 		}
 	}
 
@@ -82,7 +82,7 @@ func (w *SQSWriter) writeToQueueOnce(q *gosqs.Queue) error {
 	}
 
 	if len(batch) > 0 {
-		log.Printf("%s: sending %d messages to q\n", w.queueName, len(batch))
+		log.Printf("%s: sending %d messages to q\n", w.QueueName, len(batch))
 		result, err := q.SendMessageBatch(batch)
 		if err != nil {
 			log.Printf("%#v\n", result)
