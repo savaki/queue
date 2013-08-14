@@ -28,7 +28,6 @@ func (m *msg) OnComplete() {
 
 type SQSReader struct {
 	queueName string
-	batchSize int
 	queue     *gosqs.Queue
 	messages  chan Message
 	del       chan string
