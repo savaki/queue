@@ -6,38 +6,37 @@ Simplified interface to SQS.
 
 ### Reading Messages From SQS 
 
-In the following example, we continuously read messages from the queue named, "your-queue-name"
+In the following example, we continuously read messages from the queue named, "your-queue-name", and push them into the channel, messages.
 
 ```
 import "github.com/savaki/queue"
 
-func sample() {
-  queueName   := "your-queue-name"
-  go queue.ReadFromQueue(queueName)
+func ExampleReadingFromQueue() {
+	queueName := "your-queue-here"
+	messages := make(chan queue.Message)
 
-  for {
-    // process those messages here
-    message := <-ch 
-    // … do some processing …
-    message.OnComplete() 
-  }
+	go queue.ReadFromQueue(queueName, messages)
+
+	properties := make(map[string]string)
+	message := <-messages
+	message.Unmarshal(&properties) // unwrap the json data
+	message.OnComplete()           // call after you've successfully processed the message
 }
 ```
 
 ## Writing Messages To SQS
 
-In this example, we'll do the following, we'll write messags to SQS.
+In this example, we'll write to SQS via the channel, messages.
 
 ```
 import "github.com/savaki/queue"
 
-func sample() {
-  queueName   := "your-queue-name"
-  go queue.WriteToQueue(queueName)
-  
-  for {
-  	ch <- map[string]string{"hello":"world"}
-  }
+func ExampleWriteToQueue() {
+	queueName := "your-queue-here"
+	messages := make(chan interface{})
+
+	go queue.WriteToQueue(queueName, messages)
+	messages <- map[string]string{"hello": "world"} // write your message to the queue
 }
 ```
 
