@@ -4,7 +4,7 @@ queue
 Simplified interface to SQS.
 
 
-### Reading Messages From SQS
+### Reading Messages From SQS 
 
 In the following example, we continuously read messages from the queue named, "your-queue-name"
 
@@ -13,11 +13,7 @@ import "github.com/savaki/queue"
 
 func sample() {
   queueName   := "your-queue-name"
-  ch          := make(chan queue.Message)
-  errs        := make(chan error)
-
-  // read messages from sqs in the background
-  go queue.ReadFromQueue(queueName, ch, errs)
+  go queue.ReadFromQueue(queueName)
 
   for {
     // process those messages here
@@ -37,11 +33,7 @@ import "github.com/savaki/queue"
 
 func sample() {
   queueName   := "your-queue-name"
-  ch          := make(chan interface{})
-  errs        := make(chan error)
-
-  // write messages to sqs in the background
-  go queue.WriteToQueue(queueName, ch, errs)
+  go queue.WriteToQueue(queueName)
   
   for {
   	ch <- map[string]string{"hello":"world"}

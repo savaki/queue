@@ -5,12 +5,13 @@ import (
 	"errors"
 	"github.com/nu7hatch/gouuid"
 	gosqs "github.com/savaki/sqs"
+	"io/ioutil"
 	"log"
 	"time"
 )
 
-func WriteToQueue(queueName string) {
-	writer := &SQSWriter{QueueName: queueName}
+func WriteToQueue(queueName string, messages chan interface{}) {
+	writer := &SQSWriter{QueueName: queueName, Messages: messages}
 	writer.WriteToQueue()
 }
 
@@ -25,18 +26,29 @@ func (w *SQSWriter) WriteToQueue() {
 		w.Errs <- errors.New("WriteToQueue - misssing queueName")
 		return
 	}
+	if w.Logger == nil {
+		w.Logger = log.New(ioutil.Discard, "queue", log.Ldate|log.Ltime)
+	}
+	if w.Timeout == 0 {
+		w.Timeout = DEFAULT_TIMEOUT
+	}
+	if w.BatchSize == 0 {
+		w.BatchSize = 1
+	}
 
 	q, err := LookupQueue(w.QueueName)
 	if err != nil {
-		panic(err)
+		w.Logger.Printf("ERROR!  No queue with name, %s\n", w.QueueName)
+		w.Errs <- err
+		return
 	}
 
 	for {
 		err := w.writeToQueueOnce(q)
 		if err != nil {
 			delay := 15 * time.Second
-			log.Printf("WriteToQueue: error received while attempting to write to q -- %s\n", err.Error())
-			log.Printf("WriteToQueue: waiting %s until before retrying", delay.String())
+			w.Logger.Printf("WriteToQueue: error received while attempting to write to q -- %s\n", err.Error())
+			w.Logger.Printf("WriteToQueue: waiting %s until before retrying", delay.String())
 			<-time.After(delay)
 		}
 	}
@@ -55,7 +67,7 @@ func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestE
 				return nil, err
 			}
 			html := string(text)
-			log.Printf("assembleSendMessageBatch: queueing message, %d bytes\n", len(html))
+			w.Logger.Printf("assembleSendMessageBatch: queueing message, %d bytes\n", len(html))
 			id, err := uuid.NewV4()
 			if err != nil {
 				return nil, err
@@ -67,7 +79,7 @@ func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestE
 			requests = append(requests, request)
 			results = append(results, result)
 
-		case <-time.After(5 * time.Minute):
+		case <-time.After(w.Timeout):
 			index = w.BatchSize
 		}
 	}
@@ -82,10 +94,10 @@ func (w *SQSWriter) writeToQueueOnce(q *gosqs.Queue) error {
 	}
 
 	if len(batch) > 0 {
-		log.Printf("%s: sending %d messages to q\n", w.QueueName, len(batch))
+		w.Logger.Printf("%s: sending %d messages to q\n", w.QueueName, len(batch))
 		result, err := q.SendMessageBatch(batch)
 		if err != nil {
-			log.Printf("%#v\n", result)
+			w.Logger.Printf("%#v\n", result)
 			return err
 		}
 	}

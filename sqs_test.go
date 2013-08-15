@@ -20,7 +20,7 @@ func TestEnqueuesMessage(t *testing.T) {
 	del := make(chan string)
 
 	// WHEN
-	reader := &SQSReader{Messages: messages, Del: del}
+	reader := &SQSReader{Messages: messages, Del: del, Logger: LOGGER}
 	go reader.enqueueMessage(string(bytes), handle)
 
 	// THEN

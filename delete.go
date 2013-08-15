@@ -29,9 +29,9 @@ func assembleDeleteMessageBatch(del chan string, timeout time.Duration) []gosqs.
 	return batch
 }
 
-func deleteFromQueue(q *gosqs.Queue, del chan string) error {
+func deleteFromQueue(q *gosqs.Queue, del chan string, timeout time.Duration) error {
 	for {
-		err := deleteFromQueueOnce(q, del)
+		err := deleteFromQueueOnce(q, del, timeout)
 		if err != nil {
 			return err
 		}
@@ -40,8 +40,8 @@ func deleteFromQueue(q *gosqs.Queue, del chan string) error {
 	return nil
 }
 
-func deleteFromQueueOnce(q *gosqs.Queue, del chan string) error {
-	batch := assembleDeleteMessageBatch(del, DEFAULT_TIMEOUT)
+func deleteFromQueueOnce(q *gosqs.Queue, del chan string, timeout time.Duration) error {
+	batch := assembleDeleteMessageBatch(del, timeout)
 
 	if len(batch) > 0 {
 		log.Printf("deleting %d messages from q\n", len(batch))

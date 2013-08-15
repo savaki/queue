@@ -32,6 +32,8 @@ type SQSReader struct {
 	Messages  chan Message
 	Del       chan string
 	Errs      chan error
+	Logger    *log.Logger
+	Timeout   time.Duration
 }
 
 type SQSWriter struct {
@@ -39,11 +41,13 @@ type SQSWriter struct {
 	BatchSize int
 	Messages  chan interface{}
 	Errs      chan error
+	Logger    *log.Logger
+	Timeout   time.Duration
 }
 
 var (
 	// configure our sqs read settings
-	DEFAULT_TIMEOUT time.Duration = 5 * time.Minute
+	DEFAULT_TIMEOUT time.Duration = 1 * time.Minute
 	RECV_ALL                      = []string{"All"}
 )
 
@@ -61,7 +65,7 @@ func LookupQueue(queueName string) (*gosqs.Queue, error) {
 	}
 
 	// connect to our sqs q
-	log.Printf("looking up sqs q, %s\n", queueName)
+	log.Printf("%s: looking up sqs queue\n", queueName)
 	sqs := gosqs.New(auth, aws.Region{Name: "USWest2", SQSEndpoint: "http://sqs.us-west-2.amazonaws.com"})
 	q, err := sqs.GetQueue(queueName)
 	if err != nil {
