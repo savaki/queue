@@ -18,10 +18,10 @@ func TestIntegration(t *testing.T) {
 	input := make(chan Message)
 	timeout := 1 * time.Second
 
-	reader := &SQSReader{QueueName: queueName, Messages: input, Logger: LOGGER, Timeout: timeout}
+	reader := &SQSReader{QueueName: queueName, Messages: input, Timeout: timeout}
 	go reader.ReadFromQueue()
 
-	writer := &SQSWriter{QueueName: queueName, Messages: output, Logger: LOGGER, Timeout: timeout}
+	writer := &SQSWriter{QueueName: queueName, Messages: output, Timeout: timeout}
 	go writer.WriteToQueue()
 
 	expected := map[string]string{"hello": "world", "foo": "bar"}
@@ -38,7 +38,7 @@ func TestIntegration(t *testing.T) {
 		message.Unmarshal(&actual)
 		message.OnComplete()
 		Verify(t, expected, actual)
-		<-time.After(timeout * 2)
+		<-time.After(timeout * 2) // ensure that the delete queue has enough time to process the delete
 
 	case <-time.After(time.Second * 15):
 		t.Fail()
