@@ -37,18 +37,21 @@ func TestIntegration(t *testing.T) {
 		actual := make(map[string]string)
 		message.Unmarshal(&actual)
 		message.OnComplete()
-
-		if len(actual) != len(expected) {
-			t.Fatalf("expected %+v; actual was %+v\n", expected, actual)
-		}
-		for key, value := range expected {
-			if actual[key] != value {
-				t.Fatalf("expected %+v; actual was %+v\n", value, actual[key])
-			}
-		}
+		Verify(t, expected, actual)
 		<-time.After(timeout * 2)
 
 	case <-time.After(time.Second * 15):
 		t.Fail()
+	}
+}
+
+func Verify(t *testing.T, expected, actual map[string]string) {
+	if len(actual) != len(expected) {
+		t.Fatalf("expected %+v; actual was %+v\n", expected, actual)
+	}
+	for key, value := range expected {
+		if actual[key] != value {
+			t.Fatalf("expected %+v; actual was %+v\n", value, actual[key])
+		}
 	}
 }
