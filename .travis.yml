@@ -1,16 +1,15 @@
 language: go
+env: 
+  global: 
+  - secure: awcBeNY3oQS8yjwlFhzdYP/iaboeE1uBnT37eNkojxnl9ipi8x/0RGXeaykTNJ1RoN5ErlFpEjDUBmK5pfk16MRPcy2nPQ+19Pn5L+rStscN77/GJIXw1F0py3otOq2tWULGpTf/rY1jdhcZItfx4A2uob4HNaqmr4qgNFP1bHY=
+  - secure: dKl5u8ACSH8M+x+7s0eoGI6mD7g0P2q/PljPRD786H5EuIJ/7fqbsvrpHBE6DsTeYRzLZxSakgF8SaL/BCwFT4XqLnkicgyLZRwUQt/+Q98xsEOL+WY55L86KbrQDK9rjBw1ikQAU7yQJMLoNAsflfS4A9Wres33rUVV/+SSKjc=
 go: 
- - 1.1
- - 1.2
- - release
- - tip
-
-install:
- - export PATH=$PATH:$HOME/gopath/bin
- - go get github.com/smartystreets/goconvey
- - go get github.com/crowdmob/goamz/aws
- - go get github.com/crowdmob/goamz/sqs
- - go get github.com/nu7hatch/gouuid
-
-script:
- - go test -v ./...
+- release
+install: 
+- export PATH=$PATH:$HOME/gopath/bin
+- go get github.com/smartystreets/goconvey
+- go get github.com/crowdmob/goamz/aws
+- go get github.com/crowdmob/goamz/sqs
+- go get github.com/nu7hatch/gouuid
+script: 
+- go test -v ./...
