@@ -1,0 +1,16 @@
+language: go
+go: 
+ - 1.1
+ - 1.2
+ - release
+ - tip
+
+install:
+ - export PATH=$PATH:$HOME/gopath/bin
+ - go get github.com/smartystreets/goconvey
+ - go get github.com/crowdmob/goamz/aws
+ - go get github.com/crowdmob/goamz/sqs
+ - go get github.com/nu7hatch/gouuid
+
+script:
+ - go test -v ./...
