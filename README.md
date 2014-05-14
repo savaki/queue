@@ -4,6 +4,14 @@ queue
 
 Simplified interface to SQS.
 
+### Setting the environment
+
+Currently, queue assumes your AWS credentials have been set via the environment
+
+```
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-access-key"
+```
 
 ### Reading Messages From SQS 
 
