@@ -14,9 +14,10 @@ import "github.com/savaki/queue"
 
 func ExampleReadingFromQueue() {
 	queueName := "your-queue-here"
+	regionName := "us-west-1"
 	messages := make(chan queue.Message)
 
-	go queue.ReadFromQueue(queueName, messages)
+	go queue.ReadFromQueue(queueName, regionName, messages)
 
 	properties := make(map[string]string)
 	message := <-messages
@@ -34,9 +35,10 @@ import "github.com/savaki/queue"
 
 func ExampleWriteToQueue() {
 	queueName := "your-queue-here"
+	regionName := "us-west-1"
 	messages := make(chan interface{})
 
-	go queue.WriteToQueue(queueName, messages)
+	go queue.WriteToQueue(queueName, regionName, messages)
 	messages <- map[string]string{"hello": "world"} // write your message to the queue
 }
 ```
