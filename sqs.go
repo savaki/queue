@@ -2,8 +2,7 @@ package queue
 
 import (
 	"encoding/json"
-	gosqs "github.com/savaki/sqs"
-	"launchpad.net/goamz/aws"
+	"github.com/crowdmob/goamz/sqs"
 	"log"
 	"time"
 )
@@ -27,22 +26,26 @@ func (m *msg) OnComplete() {
 }
 
 type SQSReader struct {
-	QueueName string
-	queue     *gosqs.Queue
-	Messages  chan Message
-	Del       chan string
-	Errs      chan error
-	Logger    *log.Logger
-	Timeout   time.Duration
+	QueueName  string
+	RegionName string
+	Queue      *sqs.Queue
+	Messages   chan Message
+	Del        chan string
+	Errs       chan error
+	Logger     *log.Logger
+	Timeout    time.Duration
+	Verbose    bool
 }
 
 type SQSWriter struct {
-	QueueName string
-	BatchSize int
-	Messages  chan interface{}
-	Errs      chan error
-	Logger    *log.Logger
-	Timeout   time.Duration
+	QueueName  string
+	RegionName string
+	BatchSize  int
+	Messages   chan interface{}
+	Errs       chan error
+	Logger     *log.Logger
+	Timeout    time.Duration
+	Verbose    bool
 }
 
 var (
@@ -56,22 +59,3 @@ const (
 	RECV_VISIBILITY_TIMEOUT = 900 // 15 minutes
 	DELETE_BATCH_SIZE       = 10  // delete after theis many messages have been sent
 )
-
-func LookupQueue(queueName string) (*gosqs.Queue, error) {
-	// login to sqs, reading our credentials from the environment
-	auth, err := aws.EnvAuth()
-	if err != nil {
-		return nil, err
-	}
-
-	// connect to our sqs q
-	log.Printf("%s: looking up sqs queue\n", queueName)
-	sqs := gosqs.New(auth, aws.Region{Name: "USWest2", SQSEndpoint: "http://sqs.us-west-2.amazonaws.com"})
-	q, err := sqs.GetQueue(queueName)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("%s: ok\n", queueName)
-
-	return q, nil
-}

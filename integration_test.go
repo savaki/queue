@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"fmt"
 )
 
 var (
@@ -13,16 +14,39 @@ var (
 )
 
 func TestIntegration(t *testing.T) {
-	queueName := "queue-development"
+	queueName := "test-queue"
+	regionName := "us-west-1"
+
 	output := make(chan interface{})
 	input := make(chan Message)
 	timeout := 1 * time.Second
 
-	reader := &SQSReader{QueueName: queueName, Messages: input, Timeout: timeout}
+	reader := &SQSReader{
+		QueueName: queueName,
+		RegionName: regionName,
+		Messages: input,
+		Timeout: timeout,
+		Verbose: true,
+	}
 	go reader.ReadFromQueue()
 
-	writer := &SQSWriter{QueueName: queueName, Messages: output, Timeout: timeout}
+	writer := &SQSWriter{
+		QueueName: queueName,
+		RegionName: regionName,
+		Messages: output,
+		Timeout: timeout,
+		Verbose: true,
+	}
 	go writer.WriteToQueue()
+
+	go func() {
+		select {
+		case err := <-reader.Errs:
+			fmt.Println(err)
+		case err := <-writer.Errs:
+			fmt.Println(err)
+		}
+	}()
 
 	expected := map[string]string{"hello": "world", "foo": "bar"}
 	LOGGER.Printf("sending message: %+v\n", expected)

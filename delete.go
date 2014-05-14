@@ -1,22 +1,22 @@
 package queue
 
 import (
-	gosqs "github.com/savaki/sqs"
+	"github.com/crowdmob/goamz/sqs"
 	"log"
 	"strconv"
 	"time"
 )
 
-func assembleDeleteMessageBatch(del chan string, timeout time.Duration) []gosqs.DeleteMessageBatch {
-	batch := make([]gosqs.DeleteMessageBatch, 0)
+func assembleDeleteMessageBatch(del chan string, timeout time.Duration) []sqs.Message {
+	batch := make([]sqs.Message, 0)
 
 	for index := 0; index < DELETE_BATCH_SIZE; index++ {
 		var handle string = ""
 		select {
 		case handle = <-del:
 			log.Printf("assembleDeleteMessageBatch: received handle, %s\n", handle)
-			message := gosqs.DeleteMessageBatch{
-				Id:            strconv.Itoa(index + 1),
+			message := sqs.Message{
+				MessageId:     strconv.Itoa(index + 1),
 				ReceiptHandle: handle,
 			}
 			batch = append(batch, message)
@@ -29,18 +29,21 @@ func assembleDeleteMessageBatch(del chan string, timeout time.Duration) []gosqs.
 	return batch
 }
 
-func deleteFromQueue(q *gosqs.Queue, del chan string, timeout time.Duration) error {
+func deleteFromQueue(q *sqs.Queue, del chan string, timeout time.Duration) error {
+	var err error = nil
 	for {
-		err := deleteFromQueueOnce(q, del, timeout)
+		err = deleteFromQueueOnce(q, del, timeout)
 		if err != nil {
-			return err
+			break
 		}
 	}
 
-	return nil
+	log.Println(err)
+
+	return err
 }
 
-func deleteFromQueueOnce(q *gosqs.Queue, del chan string, timeout time.Duration) error {
+func deleteFromQueueOnce(q *sqs.Queue, del chan string, timeout time.Duration) error {
 	batch := assembleDeleteMessageBatch(del, timeout)
 
 	if len(batch) > 0 {

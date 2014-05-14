@@ -2,9 +2,10 @@ package queue
 
 func ExampleReadingFromQueue() {
 	queueName := "your-queue-here"
+	regionName := "us-east-1"
 	messages := make(chan Message)
 
-	go ReadFromQueue(queueName, messages)
+	go ReadFromQueue(queueName, regionName, messages)
 
 	properties := make(map[string]string)
 	message := <-messages
@@ -14,8 +15,9 @@ func ExampleReadingFromQueue() {
 
 func ExampleWriteToQueue() {
 	queueName := "your-queue-here"
+	regionName := "us-east-1"
 	messages := make(chan interface{})
 
-	go WriteToQueue(queueName, messages)
+	go WriteToQueue(queueName, regionName, messages)
 	messages <- map[string]string{"hello": "world"} // write your message to the queue
 }

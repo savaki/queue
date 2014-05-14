@@ -2,14 +2,18 @@ package queue
 
 import (
 	"errors"
-	gosqs "github.com/savaki/sqs"
+	"github.com/crowdmob/goamz/sqs"
 	"io/ioutil"
 	"log"
 	"time"
 )
 
-func ReadFromQueue(queueName string, messages chan Message) {
-	queue := &SQSReader{QueueName: queueName, Messages: messages}
+func ReadFromQueue(queueName string, regionName string, messages chan Message) {
+	queue := &SQSReader{
+		QueueName:  queueName,
+		RegionName: regionName,
+		Messages:   messages,
+	}
 	queue.ReadFromQueue()
 }
 
@@ -36,11 +40,17 @@ func (r *SQSReader) ReadFromQueue() {
 		r.Timeout = DEFAULT_TIMEOUT
 	}
 
-	q, err := LookupQueue(r.QueueName)
+	if r.Verbose {
+		r.Logger.Printf("Looking up SQS queue url by name and region => %s, %s", r.QueueName, r.RegionName)
+	}
+	locator := Locator{r.QueueName, r.RegionName}
+	q, err := locator.LookupQueue()
 	if err != nil {
 		r.Logger.Printf("ERROR!  No queue with name, %s\n", r.QueueName)
 		r.Errs <- err
 		return
+	} else if r.Verbose {
+		r.Logger.Printf("Found Queue, %s", q.Url)
 	}
 
 	// create a new channel to handle the deletes
@@ -49,7 +59,7 @@ func (r *SQSReader) ReadFromQueue() {
 	r.readFromQueueForever(q)
 }
 
-func (r *SQSReader) readFromQueueForever(q *gosqs.Queue) {
+func (r *SQSReader) readFromQueueForever(q *sqs.Queue) {
 	// loop forever receiving messages
 	for {
 		err := r.readFromQueueOnce(q)
@@ -63,9 +73,9 @@ func (r *SQSReader) readFromQueueForever(q *gosqs.Queue) {
 	}
 }
 
-func (r *SQSReader) readFromQueueOnce(q *gosqs.Queue) error {
+func (r *SQSReader) readFromQueueOnce(q *sqs.Queue) error {
 	r.Logger.Printf("%s: reading messages from queue\n", r.QueueName)
-	results, err := q.ReceiveMessage(RECV_ALL, RECV_MAX_MESSAGES, RECV_VISIBILITY_TIMEOUT)
+	results, err := q.ReceiveMessage(RECV_MAX_MESSAGES)
 	if err != nil {
 		return err
 	}

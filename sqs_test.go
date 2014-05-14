@@ -11,7 +11,7 @@ type Sample struct {
 	Scan []string `json:"scan"`
 }
 
-func TestEnqueuesMessage(t *testing.T) {
+func TestEnqueueMessage(t *testing.T) {
 	// GIVEN
 	original := Sample{"http://www.google.com", []string{"hello"}}
 	bytes, _ := json.Marshal(original)

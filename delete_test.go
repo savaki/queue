@@ -23,7 +23,7 @@ func TestAssembleDeleteMessageBatch(t *testing.T) {
 	}
 
 	for i := 0; i < count; i++ {
-		if batch[i].Id != strconv.Itoa(i+1) {
+		if batch[i].MessageId != strconv.Itoa(i+1) {
 			t.Fatal("expected id to be the index + 1")
 		}
 

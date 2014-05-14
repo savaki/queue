@@ -3,15 +3,19 @@ package queue
 import (
 	"encoding/json"
 	"errors"
+	"github.com/crowdmob/goamz/sqs"
 	"github.com/nu7hatch/gouuid"
-	gosqs "github.com/savaki/sqs"
 	"io/ioutil"
 	"log"
 	"time"
 )
 
-func WriteToQueue(queueName string, messages chan interface{}) {
-	writer := &SQSWriter{QueueName: queueName, Messages: messages}
+func WriteToQueue(queueName string, regionName string, messages chan interface{}) {
+	writer := &SQSWriter{
+		QueueName:  queueName,
+		RegionName: regionName,
+		Messages:   messages,
+	}
 	writer.WriteToQueue()
 }
 
@@ -36,7 +40,8 @@ func (w *SQSWriter) WriteToQueue() {
 		w.BatchSize = 1
 	}
 
-	q, err := LookupQueue(w.QueueName)
+	locator := Locator{w.QueueName, w.RegionName}
+	q, err := locator.LookupQueue()
 	if err != nil {
 		w.Logger.Printf("ERROR!  No queue with name, %s\n", w.QueueName)
 		w.Errs <- err
@@ -54,8 +59,8 @@ func (w *SQSWriter) WriteToQueue() {
 	}
 }
 
-func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestEntry, error) {
-	requests := make([]gosqs.SendMessageBatchRequestEntry, 0)
+func (w *SQSWriter) assembleSendMessageBatch() ([]sqs.Message, error) {
+	requests := make([]sqs.Message, 0)
 	results := make([]interface{}, 0)
 
 	for index := 0; index < w.BatchSize; index++ {
@@ -72,9 +77,9 @@ func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestE
 			if err != nil {
 				return nil, err
 			}
-			request := gosqs.SendMessageBatchRequestEntry{
-				Id:          id.String(),
-				MessageBody: html,
+			request := sqs.Message{
+				MessageId: id.String(),
+				Body:      html,
 			}
 			requests = append(requests, request)
 			results = append(results, result)
@@ -87,7 +92,7 @@ func (w *SQSWriter) assembleSendMessageBatch() ([]gosqs.SendMessageBatchRequestE
 	return requests, nil
 }
 
-func (w *SQSWriter) writeToQueueOnce(q *gosqs.Queue) error {
+func (w *SQSWriter) writeToQueueOnce(q *sqs.Queue) error {
 	batch, err := w.assembleSendMessageBatch()
 	if err != nil {
 		return err
