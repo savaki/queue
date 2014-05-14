@@ -1,6 +1,6 @@
 queue
-[![Build Status](https://travis-ci.org/savaki/queue.svg?branch=master)](https://travis-ci.org/savaki/queue)
 =====
+[![Build Status](https://travis-ci.org/savaki/queue.svg?branch=master)](https://travis-ci.org/savaki/queue)
 
 Simplified interface to SQS.
 
