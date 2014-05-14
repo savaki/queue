@@ -30,6 +30,10 @@ func (w *SQSWriter) WriteToQueue() {
 		w.Errs <- errors.New("WriteToQueue - misssing queueName")
 		return
 	}
+	if w.RegionName == "" {
+		w.Errs <- errors.New("WriteToQueue - misssing regionName")
+		return
+	}
 	if w.Logger == nil {
 		w.Logger = log.New(ioutil.Discard, "queue", log.Ldate|log.Ltime)
 	}
