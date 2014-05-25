@@ -4,5 +4,5 @@ import (
 	"testing"
 )
 
-func TestEnsureCompilation(* testing.T) {
+func TestEnsureCompilation(*testing.T) {
 }

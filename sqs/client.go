@@ -2,6 +2,7 @@ package sqs
 
 import (
 	"errors"
+	"fmt"
 	gosqs "github.com/crowdmob/goamz/sqs"
 	"github.com/savaki/queue"
 	"log"
@@ -29,6 +30,18 @@ func New(queueName, regionName string) *Client {
 	}
 }
 
+func (c *Client) Name() string {
+	return fmt.Sprintf("%s:%s", c.QueueName, c.RegionName)
+}
+
+func (c *Client) Inbox() chan queue.Message {
+	return c.Inbound
+}
+
+func (c *Client) Outbox() chan []byte {
+	return c.Outbound
+}
+
 func (c *Client) Initialize() error {
 	if c.queue != nil {
 		return nil
@@ -53,6 +66,9 @@ func (c *Client) Initialize() error {
 	if c.Timeout == 0 {
 		c.Timeout = DEFAULT_TIMEOUT
 	}
+	if c.BatchSize == 0 {
+		c.BatchSize = DEFAULT_BATCH_SIZE
+	}
 
 	if c.QueueName == "" {
 		err := errors.New("ERROR: QueueName is missing")
@@ -69,7 +85,11 @@ func (c *Client) Initialize() error {
 		return err
 	}
 
-	locator := Locator{QueueName: c.QueueName, RegionName: c.RegionName}
+	locator := Locator{
+		QueueName:  c.QueueName,
+		RegionName: c.RegionName,
+		Verbose:    c.Verbose,
+	}
 	theQueue, err := locator.LookupQueue()
 	if err != nil {
 		if c.Verbose {

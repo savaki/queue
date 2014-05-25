@@ -13,6 +13,10 @@ func (c *Client) WriteToQueue() error {
 		return err
 	}
 
+	if c.Verbose {
+		log.Printf("%s: Starting go routing to read from queue\n", c.QueueName)
+	}
+
 	for {
 		err := c.writeToQueueOnce()
 		if err != nil {
@@ -31,9 +35,13 @@ func (c *Client) assembleSendMessageBatch() ([]gosqs.Message, error) {
 	requests := make([]gosqs.Message, 0)
 
 	for index := 0; index < c.BatchSize; index++ {
-		var data []byte = nil
 		select {
-		case data = <-c.Outbound:
+		case data, ok := <-c.Outbound:
+			if !ok {
+				if c.Verbose {
+					log.Printf("%s: Channel is closed\n", c.QueueName)
+				}
+			}
 			encoded := base64.StdEncoding.EncodeToString(data)
 			id, err := uuid.NewV4()
 			if err != nil {
@@ -46,6 +54,11 @@ func (c *Client) assembleSendMessageBatch() ([]gosqs.Message, error) {
 			requests = append(requests, request)
 
 		case <-time.After(c.Timeout):
+			if c.Verbose {
+				if len(requests) > 0 {
+					log.Printf("%s: %d requests packaged to send\n", c.QueueName, len(requests))
+				}
+			}
 			index = c.BatchSize
 		}
 	}

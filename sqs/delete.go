@@ -29,7 +29,7 @@ func assembleDeleteMessageBatch(delete chan string, timeout time.Duration) []gos
 	return batch
 }
 
-func (c *Client)deleteFromQueue() error {
+func (c *Client) deleteFromQueue() error {
 	var err error = nil
 	for {
 		err = c.deleteFromQueueOnce()
@@ -41,7 +41,7 @@ func (c *Client)deleteFromQueue() error {
 	return err
 }
 
-func (c *Client)deleteFromQueueOnce() error {
+func (c *Client) deleteFromQueueOnce() error {
 	batch := assembleDeleteMessageBatch(c.Delete, c.Timeout)
 
 	if len(batch) > 0 {

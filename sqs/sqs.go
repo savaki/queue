@@ -14,7 +14,8 @@ var (
 const (
 	RECV_MAX_MESSAGES       = 10
 	RECV_VISIBILITY_TIMEOUT = 900 // 15 minutes
-	DELETE_BATCH_SIZE       = 10  // delete after theis many messages have been sent
+	DELETE_BATCH_SIZE       = 10  // delete after this many messages have been sent
+	DEFAULT_BATCH_SIZE      = 10
 )
 
 type msg struct {

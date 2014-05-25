@@ -10,7 +10,6 @@ func ExampleReadingFromQueue() {
 
 	client := New(queueName, regionName)
 	go client.ReadFromQueue()
-	go client.ReadFromQueue()
 
 	message := <-client.Inbound
 	properties := make(map[string]string)
