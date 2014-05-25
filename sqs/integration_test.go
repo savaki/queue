@@ -4,14 +4,8 @@ import (
 	"encoding/json"
 	. "github.com/smartystreets/goconvey/convey"
 	"log"
-	"os"
 	"testing"
 	"time"
-)
-
-var (
-	// a logger that can be used for testing
-	LOGGER = log.New(os.Stdout, "queue:", log.Ldate|log.Ltime)
 )
 
 func TestIntegration(t *testing.T) {
@@ -25,25 +19,30 @@ func TestIntegration(t *testing.T) {
 		Convey("Given a readWriter", func() {
 			client = New(queueName, regionName)
 			client.Timeout = 1 * time.Second
+			client.BatchSize = 1
+			client.Verbose = true
+			err := client.Initialize()
+			So(err, ShouldBeNil)
 
 			go client.ReadFromQueue()
 			go client.WriteToQueue()
+			go client.DeleteFromQueue()
 
 			Convey("When I send a message to the queue", func() {
 				expected := map[string]string{"hello": "world", "foo": "bar"}
-				LOGGER.Printf("sending message: %+v\n", expected)
 				go func() {
 					data, _ := json.Marshal(expected)
 					client.Outbound <- data
 				}()
 
 				Convey("Then I expect to receive it back", func() {
-					LOGGER.Printf("waiting for message\n")
 					select {
 					case message := <-client.Inbound:
+						log.Println("TEST: Received message")
 						// receive
 						actual := make(map[string]string)
-						json.NewDecoder(message).Decode(&actual)
+						err = json.NewDecoder(message).Decode(&actual)
+						So(err, ShouldBeNil)
 
 						// verify
 						So(len(actual), ShouldEqual, len(expected))
@@ -53,7 +52,7 @@ func TestIntegration(t *testing.T) {
 						message.Delete()
 						<-time.After(client.Timeout * 2) // ensure that the delete queue has enough time to process the delete
 
-					case <-time.After(time.Second * 15):
+					case <-time.After(time.Second * 300):
 						t.Fail()
 					}
 				})

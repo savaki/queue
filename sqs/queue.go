@@ -3,6 +3,7 @@ package sqs
 import (
 	gosqs "github.com/crowdmob/goamz/sqs"
 	"github.com/savaki/queue"
+	"log"
 	"time"
 )
 
@@ -17,34 +18,31 @@ type sqsQueue struct {
 }
 
 func (c *Client) ReadFromQueue() error {
-	if err := c.initialize(); err != nil {
+	if err := c.Initialize(); err != nil {
 		return err
 	}
 
-	readFromQueueForever(c.queue, c.Inbound, c.Delete)
+	// loop forever receiving messages
+	for {
+		err := c.readFromQueueOnce()
+		if err != nil {
+			if c.Verbose {
+				log.Println(err)
+			}
+			<-time.After(15 * time.Second)
+		}
+	}
 	return nil
 }
 
 func (c *Client) DeleteFromQueue() error {
-	if err := c.initialize(); err != nil {
+	if err := c.Initialize(); err != nil {
 		return err
 	}
 
-	return deleteFromQueue(c.queue, c.Delete, c.Timeout)
-}
-
-func (c *Client) WriteToQueue() error {
-	if err := c.initialize(); err != nil {
-		return err
+	err := c.deleteFromQueue()
+	if c.Verbose {
+		log.Println(err)
 	}
-
-	for {
-		err := writeToQueueOnce(c.queue, c.Outbound, c.BatchSize, c.Timeout)
-		if err != nil {
-			delay := 15 * time.Second
-			<-time.After(delay)
-		}
-	}
-
-	return nil
+	return err
 }

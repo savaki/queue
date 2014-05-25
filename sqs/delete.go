@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-func assembleDeleteMessageBatch(del chan string, timeout time.Duration) []gosqs.Message {
+func assembleDeleteMessageBatch(delete chan string, timeout time.Duration) []gosqs.Message {
 	batch := make([]gosqs.Message, 0)
 
 	for index := 0; index < DELETE_BATCH_SIZE; index++ {
 		var handle string = ""
 		select {
-		case handle = <-del:
+		case handle = <-delete:
 			log.Printf("assembleDeleteMessageBatch: received handle, %s\n", handle)
 			message := gosqs.Message{
 				MessageId:     strconv.Itoa(index + 1),
@@ -29,28 +29,29 @@ func assembleDeleteMessageBatch(del chan string, timeout time.Duration) []gosqs.
 	return batch
 }
 
-func deleteFromQueue(q *gosqs.Queue, del chan string, timeout time.Duration) error {
+func (c *Client)deleteFromQueue() error {
 	var err error = nil
 	for {
-		err = deleteFromQueueOnce(q, del, timeout)
+		err = c.deleteFromQueueOnce()
 		if err != nil {
 			break
 		}
 	}
 
-	log.Println(err)
-
 	return err
 }
 
-func deleteFromQueueOnce(q *gosqs.Queue, del chan string, timeout time.Duration) error {
-	batch := assembleDeleteMessageBatch(del, timeout)
+func (c *Client)deleteFromQueueOnce() error {
+	batch := assembleDeleteMessageBatch(c.Delete, c.Timeout)
 
 	if len(batch) > 0 {
-		log.Printf("deleting %d messages from q\n", len(batch))
-		_, err := q.DeleteMessageBatch(batch)
+		_, err := c.queue.DeleteMessageBatch(batch)
 		if err != nil {
 			return err
+		}
+
+		if c.Verbose {
+			log.Printf("%s: Deleted %d messages\n", c.QueueName, len(batch))
 		}
 	}
 

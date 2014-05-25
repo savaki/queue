@@ -1,6 +1,9 @@
 package sqs
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 var (
 	// configure our sqs read settings
@@ -15,13 +18,18 @@ const (
 )
 
 type msg struct {
-	data     []byte
+	reader   io.Reader
 	callback func()
+	deleted  bool
 }
 
 func (m *msg) Read(p []byte) (n int, err error) {
-	return 0, nil
+	return m.reader.Read(p)
 }
 
 func (m *msg) Delete() {
+	if !m.deleted {
+		m.callback()
+		m.deleted = true
+	}
 }

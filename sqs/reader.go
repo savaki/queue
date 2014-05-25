@@ -1,30 +1,30 @@
 package sqs
 
 import (
-	gosqs "github.com/crowdmob/goamz/sqs"
+	"encoding/base64"
 	"github.com/savaki/queue"
-	"time"
+	"log"
+	"strings"
 )
 
-func readFromQueueForever(q *gosqs.Queue, inbound chan queue.Message, delete chan string) {
-	// loop forever receiving messages
-	for {
-		err := readFromQueueOnce(q, inbound, delete)
-		if err != nil {
-			delay := 15 * time.Second
-			<-time.After(delay)
-		}
+func (c *Client) readFromQueueOnce() error {
+	if c.Verbose {
+		log.Printf("Waiting for message (%s:%s)\n", c.QueueName, c.RegionName)
 	}
-}
 
-func readFromQueueOnce(q *gosqs.Queue, inbound chan queue.Message, delete chan string) error {
-	results, err := q.ReceiveMessage(RECV_MAX_MESSAGES)
+	results, err := c.queue.ReceiveMessage(RECV_MAX_MESSAGES)
 	if err != nil {
+		if c.Verbose {
+			log.Println(err)
+		}
 		return err
 	}
 
+	if c.Verbose {
+		log.Printf("%s: Received %d messages\n", c.QueueName, len(results.Messages))
+	}
 	for _, message := range results.Messages {
-		enqueueMessage(inbound, delete, message.Body, message.ReceiptHandle)
+		enqueueMessage(c.Inbound, c.Delete, message.Body, message.ReceiptHandle)
 	}
 
 	return nil
@@ -32,7 +32,7 @@ func readFromQueueOnce(q *gosqs.Queue, inbound chan queue.Message, delete chan s
 
 func enqueueMessage(inbound chan queue.Message, delete chan string, text string, handle string) {
 	var message queue.Message = &msg{
-		data: []byte(text),
+		reader: base64.NewDecoder(base64.StdEncoding, strings.NewReader(text)),
 		callback: func() {
 			delete <- handle
 		},

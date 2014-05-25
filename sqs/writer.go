@@ -1,52 +1,69 @@
 package sqs
 
 import (
-	"encoding/json"
+	"encoding/base64"
 	gosqs "github.com/crowdmob/goamz/sqs"
 	uuid "github.com/nu7hatch/gouuid"
+	"log"
 	"time"
 )
 
-func assembleSendMessageBatch(outbound chan []byte, batchSize int, timeout time.Duration) ([]gosqs.Message, error) {
-	requests := make([]gosqs.Message, 0)
-	results := make([]interface{}, 0)
+func (c *Client) WriteToQueue() error {
+	if err := c.Initialize(); err != nil {
+		return err
+	}
 
-	for index := 0; index < batchSize; index++ {
-		var result []byte = nil
-		select {
-		case result = <-outbound:
-			text, err := json.Marshal(result)
-			if err != nil {
-				return nil, err
+	for {
+		err := c.writeToQueueOnce()
+		if err != nil {
+			if c.Verbose {
+				log.Println(err)
 			}
-			html := string(text)
+
+			<-time.After(15 * time.Second)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) assembleSendMessageBatch() ([]gosqs.Message, error) {
+	requests := make([]gosqs.Message, 0)
+
+	for index := 0; index < c.BatchSize; index++ {
+		var data []byte = nil
+		select {
+		case data = <-c.Outbound:
+			encoded := base64.StdEncoding.EncodeToString(data)
 			id, err := uuid.NewV4()
 			if err != nil {
 				return nil, err
 			}
 			request := gosqs.Message{
 				MessageId: id.String(),
-				Body:      html,
+				Body:      encoded,
 			}
 			requests = append(requests, request)
-			results = append(results, result)
 
-		case <-time.After(timeout):
-			index = batchSize
+		case <-time.After(c.Timeout):
+			index = c.BatchSize
 		}
 	}
 
 	return requests, nil
 }
 
-func writeToQueueOnce(q *gosqs.Queue, outbound chan []byte, batchSize int, timeout time.Duration) error {
-	batch, err := assembleSendMessageBatch(outbound, batchSize, timeout)
+func (c *Client) writeToQueueOnce() error {
+	batch, err := c.assembleSendMessageBatch()
 	if err != nil {
 		return err
 	}
 
 	if len(batch) > 0 {
-		_, err := q.SendMessageBatch(batch)
+		if c.Verbose {
+			log.Printf("%s: Sending %d messages\n", c.QueueName, len(batch))
+		}
+		_, err := c.queue.SendMessageBatch(batch)
 		if err != nil {
 			return err
 		}

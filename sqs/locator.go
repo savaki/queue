@@ -25,13 +25,13 @@ func (locator Locator) LookupQueue() (*gosqs.Queue, error) {
 	if !found {
 		return nil, errors.New(fmt.Sprintf("no such region, '%s'", locator.RegionName))
 	}
-	log.Printf("looking up sqs queue by name, '%s'\n", locator.QueueName)
+	log.Printf("Looking up sqs queue by name, '%s'\n", locator.QueueName)
 	sqsService := gosqs.New(auth, region)
 	q, err := sqsService.GetQueue(locator.QueueName)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("%s: ok\n", locator.QueueName)
+	log.Printf("Found %s => %s: ok\n", locator.QueueName, q.Url)
 
 	return q, nil
 }
