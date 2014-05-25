@@ -8,13 +8,11 @@ func ExampleReadingFromQueue() {
 	queueName := "your-queue-here"
 	regionName := "us-east-1"
 
-	builder := New(queueName, regionName)
-	go builder.ReadFromQueue()
-	go builder.ReadFromQueue()
+	client := New(queueName, regionName)
+	go client.ReadFromQueue()
+	go client.ReadFromQueue()
 
-	reader, _ := builder.BuildReader()
-
-	message := <-reader.Receiver()
+	message := <-client.Inbound
 	properties := make(map[string]string)
 	json.NewDecoder(message).Decode(&properties)
 	message.Delete()
@@ -24,10 +22,9 @@ func ExampleWriteToQueue() {
 	queueName := "your-queue-here"
 	regionName := "us-east-1"
 
-	builder := New(queueName, regionName)
-	go builder.WriteToQueue()
+	client := New(queueName, regionName)
+	go client.WriteToQueue()
 
-	writer, _ := builder.BuildWriter()
 	data, _ := json.Marshal(map[string]string{"hello": "world"})
-	writer.WriteMessage(data)
+	client.Outbound <- data
 }

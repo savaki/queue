@@ -16,41 +16,30 @@ type sqsQueue struct {
 	Verbose   bool
 }
 
-func (s *sqsQueue) Receiver() <-chan queue.Message {
-	return s.Inbound
-}
-
-func (s *sqsQueue) WriteMessage(data []byte) {
-	s.Outbound <- data
-}
-
-func (b *Builder) ReadFromQueue() error {
-	w, err := b.build()
-	if err != nil {
+func (c *Client) ReadFromQueue() error {
+	if err := c.initialize(); err != nil {
 		return err
 	}
 
-	readFromQueueForever(w.Queue, w.Inbound, w.Delete)
+	readFromQueueForever(c.queue, c.Inbound, c.Delete)
 	return nil
 }
 
-func (b *Builder) DeleteFromQueue() error {
-	w, err := b.build()
-	if err != nil {
+func (c *Client) DeleteFromQueue() error {
+	if err := c.initialize(); err != nil {
 		return err
 	}
 
-	return deleteFromQueue(w.Queue, w.Delete, w.Timeout)
+	return deleteFromQueue(c.queue, c.Delete, c.Timeout)
 }
 
-func (b *Builder) WriteToQueue() error {
-	w, err := b.build()
-	if err != nil {
+func (c *Client) WriteToQueue() error {
+	if err := c.initialize(); err != nil {
 		return err
 	}
 
 	for {
-		err := w.writeToQueueOnce(w.Queue)
+		err := writeToQueueOnce(c.queue, c.Outbound, c.BatchSize, c.Timeout)
 		if err != nil {
 			delay := 15 * time.Second
 			<-time.After(delay)

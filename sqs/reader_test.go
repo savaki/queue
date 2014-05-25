@@ -15,39 +15,34 @@ type Sample struct {
 
 func TestEnqueueMessage(t *testing.T) {
 	original := Sample{"http://www.google.com", []string{"hello"}}
-	bytes, _ := json.Marshal(original)
 	handle := "1234"
 
 	Convey("Given a Sample message", t, func() {
 		// WHEN
-		builder := &sqsQueue
-			builder.build()
-		go builder.ReadFromQueue()
+		q := &sqsQueue{
+			BatchSize: 10,
+			Inbound:   make(chan queue.Message),
+			Delete:    make(chan string),
+		}
 
 		// THEN
 		sample := Sample{}
-		message := <-reader.Inbound
+		message := <-q.Inbound
 		json.NewDecoder(message).Decode(&sample)
 
-		if sample.Url != original.Url {
-			t.Fatalf("expected url to be %s; actual was %s", original.Url, sample.Url)
-		}
-		if len(sample.Scan) != 1 {
-			t.Fatal("expected scan to be set")
-		}
-		if sample.Scan[0] != original.Scan[0] {
-			t.Fatalf("expected scan to be set to %s; actual was %s", original.Scan[0], sample.Scan[0])
-		}
+		So(sample.Url, ShouldEqual, original.Url)
+		So(sample.Scan, ShouldNotEqual, 1)
+		So(sample.Scan[0], ShouldNotEqual, original.Scan[0])
 
 		// TEST 2 - ensure the handle to be sent on the del channel
 		actualHandle := ""
 		select {
-		case actualHandle = <-reader.Delete:
+		case actualHandle = <-q.Delete:
 		case <-time.After(100 * time.Millisecond):
 		}
 
 		if actualHandle != "" {
-			t.Fatal("expected handle to not be returned until OnComplete is called")
+			t.Fatal("expected handle to not be returned until Delete is called")
 		}
 
 		// call OnComplete
@@ -57,7 +52,7 @@ func TestEnqueueMessage(t *testing.T) {
 
 		// read from chan
 		select {
-		case actualHandle = <-reader.Delete:
+		case actualHandle = <-q.Delete:
 		case <-time.After(100 * time.Millisecond):
 		}
 

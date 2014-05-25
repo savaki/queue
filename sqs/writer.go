@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-func (w *sqsQueue) assembleSendMessageBatch() ([]gosqs.Message, error) {
+func assembleSendMessageBatch(outbound chan []byte, batchSize int, timeout time.Duration) ([]gosqs.Message, error) {
 	requests := make([]gosqs.Message, 0)
 	results := make([]interface{}, 0)
 
-	for index := 0; index < w.BatchSize; index++ {
-		var result interface{} = nil
+	for index := 0; index < batchSize; index++ {
+		var result []byte = nil
 		select {
-		case result = <-w.Inbound:
+		case result = <-outbound:
 			text, err := json.Marshal(result)
 			if err != nil {
 				return nil, err
@@ -31,16 +31,16 @@ func (w *sqsQueue) assembleSendMessageBatch() ([]gosqs.Message, error) {
 			requests = append(requests, request)
 			results = append(results, result)
 
-		case <-time.After(w.Timeout):
-			index = w.BatchSize
+		case <-time.After(timeout):
+			index = batchSize
 		}
 	}
 
 	return requests, nil
 }
 
-func (w *sqsQueue) writeToQueueOnce(q *gosqs.Queue) error {
-	batch, err := w.assembleSendMessageBatch()
+func writeToQueueOnce(q *gosqs.Queue, outbound chan []byte, batchSize int, timeout time.Duration) error {
+	batch, err := assembleSendMessageBatch(outbound, batchSize, timeout)
 	if err != nil {
 		return err
 	}
