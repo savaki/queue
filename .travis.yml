@@ -8,6 +8,7 @@ go:
 install: 
 - export PATH=$PATH:$HOME/gopath/bin
 - go get -u github.com/smartystreets/goconvey
+- go get -u github.com/jacobsa/oglematchers
 - go get -u github.com/crowdmob/goamz/aws
 - go get -u github.com/crowdmob/goamz/sqs
 - go get -u github.com/nu7hatch/gouuid
