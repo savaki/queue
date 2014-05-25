@@ -18,19 +18,23 @@ export AWS_SECRET_ACCESS_KEY="your-secret-access-key"
 In the following example, we continuously read messages from the queue named, "your-queue-name", and push them into the channel, messages.
 
 ```
-import "github.com/savaki/queue"
+import (
+  "github.com/savaki/queue/sqs"
+  "json"
+)
 
 func ExampleReadingFromQueue() {
 	queueName := "your-queue-here"
 	regionName := "us-west-1"
-	messages := make(chan queue.Message)
+	
+	client := sqs.ReadFromQueue(queueName, regionName)
 
-	go queue.ReadFromQueue(queueName, regionName, messages)
+	go client.ReadFromQueue()
 
 	properties := make(map[string]string)
-	message := <-messages
-	message.Unmarshal(&properties) // unwrap the json data
-	message.OnComplete()           // call after you've successfully processed the message
+	message := <-client.Inbound
+	json.NewDecoder(message).Decode(&properties)
+	message.Delete() // call when you've successfully processed the message
 }
 ```
 
@@ -39,15 +43,22 @@ func ExampleReadingFromQueue() {
 In this example, we'll write to SQS via the channel, messages.
 
 ```
-import "github.com/savaki/queue"
+import (
+  "github.com/savaki/queue/sqs"
+  "json"
+)
 
 func ExampleWriteToQueue() {
 	queueName := "your-queue-here"
 	regionName := "us-west-1"
-	messages := make(chan interface{})
+	
+	client := sqs.New(queueName, regionName)
 
-	go queue.WriteToQueue(queueName, regionName, messages)
-	messages <- map[string]string{"hello": "world"} // write your message to the queue
+	go queue.WriteToQueue()
+
+	value := map[string]string{"hello": "world"}
+	data, _ := json.Marshal(value)
+	messages <- data  // write your message to the queue
 }
 ```
 
