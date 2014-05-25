@@ -27,7 +27,7 @@ func ExampleReadingFromQueue() {
 	queueName := "your-queue-here"
 	regionName := "us-west-1"
 	
-	client := sqs.ReadFromQueue(queueName, regionName)
+	client := sqs.New(queueName, regionName)
 
 	go client.ReadFromQueue()
 
